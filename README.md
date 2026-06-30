@@ -2,7 +2,6 @@
 
 A small macOS desktop widget that reminds you to journal daily. Floating on your desktop with a blur effect, password protected, and integrates with Obsidian.
 
-![Preview](preview.png)
 
 ## Features
 
