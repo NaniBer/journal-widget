@@ -1,0 +1,13 @@
+# Build artifacts
+.build/
+*.xcodeproj/
+*.xcworkspace/
+DerivedData/
+
+# macOS
+.DS_Store
+*.swp
+*~
+
+# Secrets - never commit passwords
+Sources/Secrets.swift
