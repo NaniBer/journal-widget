@@ -13,6 +13,8 @@ struct JournalWidgetApp: App {
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     var window: NSWindow!
+    var timer: Timer?
+    var lastFrontmostApp: String = ""
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Hide from Dock
@@ -26,7 +28,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 140, height: 100),
-            styleMask: [.borderless],
+            styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
         )
@@ -35,22 +37,41 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.isOpaque = false
         window.backgroundColor = .clear
         window.hasShadow = true
-        
-        // Desktop level - behind all windows
-        window.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopIconWindow)))
-        
-        window.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary]
+        window.level = .floating
+        window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         window.ignoresMouseEvents = false
-        window.acceptsMouseMovedEvents = true
-        
-        // Fixed position - not movable
+        window.hidesOnDeactivate = false
         window.isMovable = false
         window.isMovableByWindowBackground = false
         
-        // Position on screen (higher up, left side)
+        // Position on screen
         window.setFrameOrigin(NSPoint(x: 20, y: 400))
+        window.makeKeyAndOrderFront(nil)
         
-        window.orderFront(nil)
+        // Poll every 0.5 seconds to check frontmost app
+        timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+            self?.checkFrontmostApp()
+        }
+    }
+    
+    private func checkFrontmostApp() {
+        guard let frontmostApp = NSWorkspace.shared.frontmostApplication else { return }
+        let bundleId = frontmostApp.bundleIdentifier ?? ""
+        
+        // Skip if same app as before
+        guard bundleId != lastFrontmostApp else { return }
+        lastFrontmostApp = bundleId
+        
+        // Show widget only when Finder (desktop) is frontmost
+        if bundleId == "com.apple.finder" {
+            DispatchQueue.main.async { [weak self] in
+                self?.window.orderFront(nil)
+            }
+        } else {
+            DispatchQueue.main.async { [weak self] in
+                self?.window.orderOut(nil)
+            }
+        }
     }
 }
 

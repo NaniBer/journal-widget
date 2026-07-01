@@ -1,19 +1,10 @@
 import SwiftUI
-import CryptoKit
 
 struct JournalWidgetView: View {
     @State private var hasJournaledToday: Bool = false
-    @State private var showPasswordPrompt: Bool = false
-    @State private var enteredPassword: String = ""
-    @State private var showWrongPassword: Bool = false
+    @State private var showCelebration: Bool = false
     
-    // SHA256 hash of the password "journal" - change this to set your own password
-    // To generate a new hash: echo -n "yourpassword" | shasum -a 256
-    private let passwordHash = "a2b14f5e78e8a8e6c8f8b8c8d8e8f8a8b8c8d8e8f8a8b8c8d8e8f8a8b8c8d8e8" // placeholder
-    
-    private let vaultPath = "/Users/mac/Documents/Nan's corner/Inside My Brain" // Replace with your actual vault path
-    
-    private let correctPassword = "123456789" // Replace with your actual password
+    private let vaultPath = "/Users/mac/Documents/Nan's corner/Inside My Brain"
     
     private var todayString: String {
         let formatter = DateFormatter()
@@ -32,7 +23,9 @@ struct JournalWidgetView: View {
                 .shadow(radius: 2)
             
             VStack(spacing: 8) {
-               if hasJournaledToday {
+                if showCelebration {
+                    celebrationView
+                } else if hasJournaledToday {
                     doneView
                 } else {
                     promptView
@@ -43,9 +36,6 @@ struct JournalWidgetView: View {
         .fixedSize()
         .onAppear {
             checkIfJournaled()
-        }
-        .sheet(isPresented: $showPasswordPrompt) {
-            passwordPromptView
         }
     }
     
@@ -59,7 +49,7 @@ struct JournalWidgetView: View {
                 .font(.system(size: 11, weight: .medium))
                 .foregroundColor(.primary)
             
-            Button(action: { showPasswordPrompt = true }) {
+            Button(action: openOrCreateJournal) {
                 HStack(spacing: 6) {
                     Image(systemName: "note.text.badge.plus")
                         .font(.system(size: 10, weight: .medium))
@@ -86,7 +76,7 @@ struct JournalWidgetView: View {
                 .font(.system(size: 10, weight: .medium))
                 .foregroundColor(.secondary)
             
-            Button(action: { showPasswordPrompt = true }) {
+            Button(action: openOrCreateJournal) {
                 HStack(spacing: 5) {
                     Image(systemName: "note.text")
                         .font(.system(size: 9))
@@ -103,52 +93,14 @@ struct JournalWidgetView: View {
         }
     }
     
-
-    private var passwordPromptView: some View {
-        VStack(spacing: 16) {
-            Text("Enter Password")
-                .font(.system(size: 14, weight: .semibold))
+    private var celebrationView: some View {
+        VStack(spacing: 6) {
+            Text("✨")
+                .font(.system(size: 22))
             
-            SecureField("Password", text: $enteredPassword)
-                .textFieldStyle(.roundedBorder)
-                .frame(width: 180)
-                .onSubmit {
-                    verifyPassword()
-                }
-            
-            if showWrongPassword {
-                Text("Wrong password")
-                    .font(.system(size: 10))
-                    .foregroundColor(.red)
-            }
-            
-            HStack(spacing: 12) {
-                Button("Cancel") {
-                    enteredPassword = ""
-                    showWrongPassword = false
-                    showPasswordPrompt = false
-                }
-                .keyboardShortcut(.escape)
-                
-                Button("Unlock") {
-                    verifyPassword()
-                }
-                .keyboardShortcut(.return)
-                .buttonStyle(.borderedProminent)
-            }
-        }
-        .padding(24)
-        .frame(width: 260, height: 200)
-    }
-    
-    private func verifyPassword() {
-        if enteredPassword == correctPassword {
-            enteredPassword = ""
-            showWrongPassword = false
-            showPasswordPrompt = false
-            openOrCreateJournal()
-        } else {
-            showWrongPassword = true
+            Text("Good job!")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(.primary)
         }
     }
     
@@ -170,8 +122,14 @@ struct JournalWidgetView: View {
             // Create empty file
             fileManager.createFile(atPath: journalFilePath, contents: nil, attributes: nil)
             
+            // Show celebration
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                showCelebration = true
+            }
+            
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 withAnimation {
+                    showCelebration = false
                     hasJournaledToday = true
                 }
             }
