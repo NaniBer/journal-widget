@@ -5,7 +5,6 @@ struct JournalWidgetApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
     var body: some Scene {
-        // Empty - we create window in AppDelegate
         Settings {
             EmptyView()
         }
@@ -13,35 +12,45 @@ struct JournalWidgetApp: App {
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
-    var panel: NSPanel!
+    var window: NSWindow!
     
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Hide from Dock
+        NSApplication.shared.setActivationPolicy(.accessory)
+        
         let view = JournalWidgetView()
             .frame(width: 140, height: 100)
         
         let hostingView = NSHostingView(rootView: view)
         hostingView.frame = NSRect(x: 0, y: 0, width: 140, height: 100)
         
-        panel = NSPanel(contentRect: NSRect(x: 100, y: 100, width: 140, height: 100),
-                        styleMask: [.borderless, .nonactivatingPanel, .hudWindow],
-                        backing: .buffered,
-                        defer: false)
+        window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 140, height: 100),
+            styleMask: [.borderless],
+            backing: .buffered,
+            defer: false
+        )
         
-        panel.contentView = hostingView
-        panel.isFloatingPanel = true
-        panel.level = .floating
-        panel.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary]
-        panel.isOpaque = false
-        panel.backgroundColor = .clear
-        panel.hasShadow = true
-        panel.makeKeyAndOrderFront(nil)
+        window.contentView = hostingView
+        window.isOpaque = false
+        window.backgroundColor = .clear
+        window.hasShadow = true
         
-        // Position it in a visible spot
-        panel.center()
-    }
-    
-    func applicationWillTerminate(_ notification: Notification) {
-        panel?.close()
+        // Desktop level - behind all windows
+        window.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopIconWindow)))
+        
+        window.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary]
+        window.ignoresMouseEvents = false
+        window.acceptsMouseMovedEvents = true
+        
+        // Fixed position - not movable
+        window.isMovable = false
+        window.isMovableByWindowBackground = false
+        
+        // Position on screen (higher up, left side)
+        window.setFrameOrigin(NSPoint(x: 20, y: 400))
+        
+        window.orderFront(nil)
     }
 }
 
